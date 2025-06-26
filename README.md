@@ -13,6 +13,7 @@
     +apiProxy.js      // 前端 API 代理 (由後端動態生成)
   +index.html       // 靜態測試頁面
   +main.js          // 前端主邏輯
+  +react-demo.html  // react demo
 +generateApiProxy.js// 後端腳本：負責動態生成 apiProxy.js
 +package.json       // 專案依賴與配置
 +server.js          // Express.js 後端伺服器主入口
@@ -88,7 +89,7 @@
     ```
 
 5.  **重要：更新 Deno 相關檔案**
-    由於此模板原本為 Node.js 專案，您需要將以下檔案更新為 Deno 相容版本（這些檔案已在之前的對話中提供）：
+    由於此模板原本為 Node.js 專案，已將以下檔案更新為 Deno 相容版本：
     * `server.js`
     * `generateApiProxy.js`
     * `public/ajax/apiExecutor.js`
