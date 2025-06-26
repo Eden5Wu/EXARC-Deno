@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React API Demo with apiProxy</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+    .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 600px; margin: 20px auto; }
+    h1, h2 { color: #333; }
+    button { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+    button.get { background-color: #4CAF50; color: white; }
+    button.post { background-color: #008CBA; color: white; }
+    input[type="text"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+    pre { background-color: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .loading { color: #888; font-style: italic; }
+    .error { color: red; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.1.0",
+        "react-dom/client": "https://esm.sh/react-dom@19.1.0/client",
+        "apiProxy": "./ajax/apiProxy.js"
+      }
+    }
+  </script>
+  <script type="module" src="https://esm.sh/tsx"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // 從 importmap 定義的路徑導入 React 鉤子和 ReactDOM
+    import { createRoot } from "react-dom/client";
+    import { useState, useEffect } from "react";
+    // 從 importmap 定義的路徑導入 apiProxy。
+    import { apiProxy } from "apiProxy";
+    
+    // React 主元件
+    function App() {
+      // 狀態：管理 echomsg API 的輸入和回應
+      const [echoInput, setEchoInput] = useState('Hello from React!');
+      const [echoResponse, setEchoResponse] = useState('等待發送...');
+      const [echoLoading, setEchoLoading] = useState(false);
+
+      // 狀態：管理 reversemmsg API 的輸入和回應
+      const [reverseInput, setReverseInput] = useState('React is awesome');
+      const [reverseResponse, setReverseResponse] = useState('等待發送...');
+      const [reverseLoading, setReverseLoading] = useState(false);
+
+      // 處理 GET 請求
+      const handleEcho = async () => {
+        setEchoLoading(true);
+        setEchoResponse('載入中...');
+        try {
+          const response = await apiProxy.echomsg(echoInput); // 使用 apiProxy 呼叫 echomsg
+          setEchoResponse(JSON.stringify(response, null, 2));
+        } catch (error) {
+          console.error('Echo API 呼叫失敗:', error);
+          setEchoResponse(`錯誤: ${error.message}\n${JSON.stringify(error.response?.data, null, 2) || ''}`);
+        } finally {
+          setEchoLoading(false);
+        }
+      };
+
+      // 處理 POST 請求
+      const handleReverse = async () => {
+        setReverseLoading(true);
+        setReverseResponse('載入中...');
+        try {
+          // apiProxy.reversemmsg 期望一個包含 'message' 的 JSON 物件
+          const response = await apiProxy.reversemmsg(reverseInput); // 使用 apiProxy 呼叫 reversemmsg
+          setReverseResponse(JSON.stringify(response, null, 2));
+        } catch (error) {
+          console.error('Reverse API 呼叫失敗:', error);
+          setReverseResponse(`錯誤: ${error.message}\n${JSON.stringify(error.response?.data, null, 2) || ''}`);
+        } finally {
+          setReverseLoading(false);
+        }
+      };
+
+      // UI 渲染
+      return (
+        <div className="container">
+          <h1>React 19 + API Proxy Demo</h1>
+          <p>此頁面使用 React 元件呼叫後端的 `/api/echomsg` (GET) 和 `/api/reversemmsg` (POST)。</p>
+
+          <hr />
+
+          <h2>Echo Message (GET)</h2>
+          <label htmlFor="echoInput">輸入訊息:</label>
+          <input
+            type="text"
+            id="echoInput"
+            value={echoInput}
+            onChange={(e) => setEchoInput(e.target.value)}
+            disabled={echoLoading}
+          />
+          <button className="get" onClick={handleEcho} disabled={echoLoading}>
+            {echoLoading ? '發送中...' : '發送 GET 請求'}
+          </button>
+          <h3>回應:</h3>
+          <pre className={echoResponse.includes('錯誤') ? 'error' : ''}>{echoResponse}</pre>
+
+          <hr />
+
+          <h2>Reverse Message (POST)</h2>
+          <label htmlFor="reverseInput">輸入要反轉的訊息:</label>
+          <input
+            type="text"
+            id="reverseInput"
+            value={reverseInput}
+            onChange={(e) => setReverseInput(e.target.value)}
+            disabled={reverseLoading}
+          />
+          <button className="post" onClick={handleReverse} disabled={reverseLoading}>
+            {reverseLoading ? '發送中...' : '發送 POST 請求'}
+          </button>
+          <h3>回應:</h3>
+          <pre className={reverseResponse.includes('錯誤') ? 'error' : ''}>{reverseResponse}</pre>
+        </div>
+      );
+    }
+
+    // 將 App 元件渲染到 DOM 中
+    createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
