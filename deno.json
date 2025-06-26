@@ -1,0 +1,17 @@
+// deno.json
+
+{
+  // 定義 Deno 專案的各種配置
+  "tasks": {
+    "start": "deno run --allow-net --allow-env --allow-read --allow-write --unstable-kv server.js",
+    "dev": "deno run --allow-net --allow-env --allow-read --allow-write --unstable-kv --watch server.js"
+  },
+  // 可以選擇添加導入映射，讓您的導入路徑更簡潔
+  // 例如：
+  "imports": {
+    "express": "npm:express@4.18.2",
+    "cookie-parser": "npm:cookie-parser@1.4.6",
+    "dotenv": "https://deno.land/std@0.224.0/dotenv/mod.ts",
+    "path": "https://deno.land/std@0.224.0/path/mod.ts"
+  }
+}
