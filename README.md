@@ -77,16 +77,17 @@
 
 2.  **複製專案模板**：
     ```console
-    git clone [https://github.com/Eden5Wu/EXARC](https://github.com/Eden5Wu/EXARC) your-new-deno-project-name
+    git clone [https://github.com/Eden5Wu/EXARC-Deno](https://github.com/Eden5Wu/EXARC-Deno) your-new-deno-project-name
     ```
     請將 `your-new-deno-project-name` 替換為您實際的專案名稱 (例如 `EXARC-Deno`)。
+    當然，直接下載 zip 檔也是可以的。
 
-3.  **進入專案目錄**：
+4.  **進入專案目錄**：
     ```console
     cd your-new-deno-project-name
     ```
 
-4.  **重要：更新 Deno 相關檔案**
+5.  **重要：更新 Deno 相關檔案**
     由於此模板原本為 Node.js 專案，您需要將以下檔案更新為 Deno 相容版本（這些檔案已在之前的對話中提供）：
     * `server.js`
     * `generateApiProxy.js`
@@ -109,13 +110,13 @@
     }
     ```
 
-5.  **啟動開發伺服器**：
+6.  **啟動開發伺服器**：
     ```console
     deno task dev
     ```
     Deno 將會自動下載並快取所需的 npm 模組（例如 Express）。
     此指令會使用 `deno.json` 中定義的 `dev` 任務，並帶有必要的權限旗標 (`--allow-net`, `--allow-env`, `--allow-read`, `--allow-write`, `--unstable-kv`) 和監控模式 (`--watch`)。
 
-6.  伺服器啟動後：
+7.  伺服器啟動後：
     * `public/ajax/apiProxy.js` 將會被自動生成（或更新）。
     * 您就可以在瀏覽器中訪問 `http://localhost:8893` (或您在 `.env` 中配置的埠號) 進行測試。
