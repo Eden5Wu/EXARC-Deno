@@ -16,6 +16,8 @@
   +jquery-mobile-demo.html // jQuery Mobile 示範頁面
   +react-demo.html  // React 示範頁面
   +vue-demo.html    // Vue 示範頁面
+  +apiProxyInvoker.html // API 動態調用器 HTML 介面
+  +apiProxyInvoker.js   // API 動態調用器 JavaScript 邏輯
 +generateApiProxy.js// 後端腳本：負責動態生成 apiProxy.js
 +package.json       // 專案依賴與配置
 +server.js          // Express.js 後端伺服器主入口
@@ -47,6 +49,12 @@
     * `main.js` 是前端的應用程式邏輯，它示範了如何使用 `apiProxy.js` 來呼叫後端 API 並顯示回應。
     * 其他 Demo 頁面 (`react-demo.html`, `vue-demo.html`, `jquery-mobile-demo.html`) 則展示了如何在不同的前端框架中整合此代理模式。
     * **如何使用：** 這是您編寫前端使用者介面和互動邏輯的地方，使用 `apiProxy` 來與後端溝通.
+
+* **`public/apiProxyInvoker.html` 與 `public/apiProxyInvoker.js`**
+    * 這兩個檔案共同提供了一個自動化、互動式的 API 調用與測試介面。
+    * `apiProxyInvoker.js` 會動態讀取 `public/ajax/apiProxy.js` 的原始碼，解析其中的 JSDoc 註解和函數參數，並在 `apiProxyInvoker.html` 中為每個 API 方法生成一個可操作的表單。
+    * 這使得開發者無需任何手動配置，即可快速查看所有後端 API 的文件並進行測試。
+    * **如何使用：** 在開發模式下，您可以直接在瀏覽器中訪問此頁面進行 API 測試和探索。
 
 * **`generateApiProxy.js`**
     * 這是一個**後端 Deno 腳本**，在 `server.js` 啟動時被調用（僅限開發模式）。
