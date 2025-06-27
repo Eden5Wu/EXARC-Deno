@@ -11,18 +11,22 @@
     button { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
     button.get { background-color: #4CAF50; color: white; }
     button.post { background-color: #008CBA; color: white; }
+    button.auth { background-color: #f44336; color: white; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
     input[type="text"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
     pre { background-color: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
     label { display: block; margin-bottom: 5px; font-weight: bold; }
     .loading { color: #888; font-style: italic; }
     .error { color: red; }
+    #authStatus { font-weight: bold; color: #555; margin-bottom: 15px; }
   </style>
   <script type="importmap">
     {
       "imports": {
         "react": "https://esm.sh/react@19.1.0",
         "react-dom/client": "https://esm.sh/react-dom@19.1.0/client",
-        "apiProxy": "./ajax/apiProxy.js"
+        "apiProxy": "./ajax/apiProxy.js",
+        "authService": "./ajax/authService.js"
       }
     }
   </script>
@@ -35,11 +39,20 @@
     // 從 importmap 定義的路徑導入 React 鉤子和 ReactDOM
     import { createRoot } from "react-dom/client";
     import { useState, useEffect } from "react";
-    // 從 importmap 定義的路徑導入 apiProxy。
+    // 從 importmap 定義的路徑導入 apiProxy 和 authService
     import { apiProxy } from "apiProxy";
-    
+    import { login, logout, isAuthenticated, initializeAuth } from "authService";
+
+    // 前端旗標，控制是否啟用登入功能。
+    // 您可以將此值設為 false 來關閉登入 UI 和邏輯。
+    const ENABLE_LOGIN = true;
+
     // React 主元件
     function App() {
+      // 狀態：管理登入狀態
+      const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
+      const [loginLoading, setLoginLoading] = useState(false);
+
       // 狀態：管理 echomsg API 的輸入和回應
       const [echoInput, setEchoInput] = useState('Hello from React!');
       const [echoResponse, setEchoResponse] = useState('等待發送...');
@@ -49,6 +62,41 @@
       const [reverseInput, setReverseInput] = useState('React is awesome');
       const [reverseResponse, setReverseResponse] = useState('等待發送...');
       const [reverseLoading, setReverseLoading] = useState(false);
+
+      // 監聽登入狀態變更，並在元件載入時初始化認證狀態
+      useEffect(() => {
+          if (ENABLE_LOGIN) {
+              initializeAuth(); // 在元件掛載時從 localStorage 恢復 Token
+              setIsLoggedIn(isAuthenticated()); // 更新狀態
+          }
+      }, []);
+
+      // 處理登入請求
+      const handleLogin = async () => {
+        if (!ENABLE_LOGIN) return;
+
+        setLoginLoading(true);
+        try {
+            // 使用 authService.js 中的 login 函式，它會處理 API 呼叫和 Token 儲存
+            const response = await login({ username: 'testuser', password: 'password123' });
+            console.log('登入成功:', response);
+            setIsLoggedIn(isAuthenticated()); // 更新登入狀態
+        } catch (error) {
+            console.error('登入失敗:', error);
+            alert('登入失敗: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setLoginLoading(false);
+        }
+      };
+
+      // 處理登出
+      const handleLogout = () => {
+        if (!ENABLE_LOGIN) return;
+
+        logout(); // 清除本地儲存的 Token
+        setIsLoggedIn(isAuthenticated()); // 更新登入狀態
+        alert('已登出！');
+      };
 
       // 處理 GET 請求
       const handleEcho = async () => {
@@ -70,7 +118,6 @@
         setReverseLoading(true);
         setReverseResponse('載入中...');
         try {
-          // apiProxy.reversemmsg 期望一個包含 'message' 的 JSON 物件
           const response = await apiProxy.reversemmsg(reverseInput); // 使用 apiProxy 呼叫 reversemmsg
           setReverseResponse(JSON.stringify(response, null, 2));
         } catch (error) {
@@ -87,6 +134,21 @@
           <h1>React 19 + API Proxy Demo</h1>
           <p>此頁面使用 React 元件呼叫後端的 `/api/echomsg` (GET) 和 `/api/reversemmsg` (POST)。</p>
 
+          {/* 新增：認證控制區塊 */}
+          {ENABLE_LOGIN && (
+              <>
+                  <hr />
+                  <h2>認證控制</h2>
+                  <div id="authStatus">認證狀態: {isLoggedIn ? '已登入' : '未登入'}</div>
+                  <button className="auth" onClick={handleLogin} disabled={loginLoading || isLoggedIn}>
+                      {loginLoading ? '登入中...' : '登入 (testuser/password123)'}
+                  </button>
+                  <button className="auth" onClick={handleLogout} disabled={!isLoggedIn}>
+                      登出
+                  </button>
+              </>
+          )}
+          
           <hr />
 
           <h2>Echo Message (GET)</h2>

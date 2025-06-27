@@ -11,17 +11,21 @@
     button { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
     button.get { background-color: #4CAF50; color: white; }
     button.post { background-color: #008CBA; color: white; }
+    button.auth { background-color: #f44336; color: white; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
     input[type="text"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
     pre { background-color: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
     label { display: block; margin-bottom: 5px; font-weight: bold; }
     .loading { color: #888; font-style: italic; }
     .error { color: red; }
+    #authStatus { font-weight: bold; color: #555; margin-bottom: 15px; }
   </style>
   <script type="importmap">
     {
       "imports": {
         "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js",
-        "apiProxy": "./ajax/apiProxy.js"
+        "apiProxy": "./ajax/apiProxy.js",
+        "authService": "./ajax/authService.js"
       }
     }
   </script>
@@ -32,6 +36,18 @@
       <h1>Vue 3 + API Proxy Demo</h1>
       <p>此頁面使用 Vue 元件呼叫後端的 `/api/echomsg` (GET) 和 `/api/reversemmsg` (POST)。</p>
 
+      <template v-if="ENABLE_LOGIN">
+        <hr />
+        <h2>認證控制</h2>
+        <div id="authStatus">認證狀態: {{ isLoggedIn ? '已登入' : '未登入' }}</div>
+        <button class="auth" @click="handleLogin" :disabled="loginLoading || isLoggedIn">
+          {{ loginLoading ? '登入中...' : '登入 (testuser/password123)' }}
+        </button>
+        <button class="auth" @click="handleLogout" :disabled="!isLoggedIn">
+          登出
+        </button>
+      </template>
+      
       <hr />
 
       <h2>Echo Message (GET)</h2>
@@ -67,14 +83,23 @@
   </div>
 
   <script type="module">
-    // 從 importmap 定義的路徑導入 Vue 的 create app 和 ref
-    import { createApp, ref } from 'vue';
-    // 從 importmap 定義的路徑導入 apiProxy。
+    // 從 importmap 定義的路徑導入 Vue 的 create app, ref 和 onMounted
+    import { createApp, ref, onMounted } from 'vue';
+    // 從 importmap 定義的路徑導入 apiProxy 和 authService
     import { apiProxy } from 'apiProxy';
+    import { login, logout, isAuthenticated, initializeAuth } from 'authService';
     
+    // 前端旗標，控制是否啟用登入功能。
+    // 您可以將此值設為 false 來關閉登入 UI 和邏輯。
+    const ENABLE_LOGIN = true;
+
     // 建立 Vue 應用程式
     createApp({
       setup() {
+        // 狀態：管理登入狀態
+        const isLoggedIn = ref(isAuthenticated());
+        const loginLoading = ref(false);
+
         // 狀態：管理 echomsg API 的輸入和回應
         const echoInput = ref('Hello from Vue!');
         const echoResponse = ref('等待發送...');
@@ -84,6 +109,41 @@
         const reverseInput = ref('Vue is awesome');
         const reverseResponse = ref('等待發送...');
         const reverseLoading = ref(false);
+
+        // 在元件掛載時初始化認證狀態
+        onMounted(() => {
+            if (ENABLE_LOGIN) {
+                initializeAuth(); // 從 localStorage 恢復 Token
+                isLoggedIn.value = isAuthenticated(); // 更新狀態
+            }
+        });
+
+        // 處理登入請求
+        const handleLogin = async () => {
+          if (!ENABLE_LOGIN) return;
+
+          loginLoading.value = true; // 修正：使用 .value 來修改 ref 的值
+          try {
+              // 使用 authService.js 中的 login 函式，它會處理 API 呼叫和 Token 儲存
+              const response = await login({ username: 'testuser', password: 'password123' });
+              console.log('登入成功:', response);
+              isLoggedIn.value = isAuthenticated(); // 更新登入狀態
+          } catch (error) {
+              console.error('登入失敗:', error);
+              alert('登入失敗: ' + (error.response?.data?.message || error.message));
+          } finally {
+              loginLoading.value = false; // 修正：使用 .value 來修改 ref 的值
+          }
+        };
+
+        // 處理登出
+        const handleLogout = () => {
+          if (!ENABLE_LOGIN) return;
+
+          logout(); // 清除本地儲存的 Token
+          isLoggedIn.value = isAuthenticated(); // 更新登入狀態
+          alert('已登出！');
+        };
 
         // 處理 GET 請求
         const handleEcho = async () => {
@@ -117,14 +177,19 @@
           }
         };
 
-        // 將狀態和方法手提供給模板
+        // 將狀態和方法手動提供給模板
         return {
+          ENABLE_LOGIN, // 將 ENABLE_LOGIN 傳遞給模板以條件渲染
+          isLoggedIn,
+          loginLoading,
           echoInput,
           echoResponse,
           echoLoading,
           reverseInput,
           reverseResponse,
           reverseLoading,
+          handleLogin,
+          handleLogout,
           handleEcho,
           handleReverse
         };

@@ -1,9 +1,11 @@
 // public/main.js
 
-// 移除 api 導入，因為我們現在透過 apiProxy 呼叫
-// import { api } from './ajax/apiExecutor.js';
 import { login, logout, isAuthenticated, initializeAuth } from './ajax/authService.js';
 import { apiProxy } from './ajax/apiProxy.js'; // 導入 apiProxy
+
+// 新增一個前端旗標，控制是否啟用登入功能
+// 您可以在這裡設定為 true 或 false
+const ENABLE_LOGIN = true;
 
 // 初始化認證狀態 (如果localStorage有Token會自動恢復)
 initializeAuth();
@@ -11,6 +13,17 @@ initializeAuth();
 // 用於顯示回應的 DOM 元素
 const echoResponseDiv = document.getElementById('echoResponse');
 const reverseResponseDiv = document.getElementById('reverseResponse');
+const authStatusDiv = document.getElementById('authStatus');
+
+// 新增：檢查並更新認證狀態顯示
+function updateAuthStatus() {
+    if (ENABLE_LOGIN) {
+        authStatusDiv.textContent = `認證狀態: ${isAuthenticated() ? '已登入' : '未登入'}`;
+    } else {
+        authStatusDiv.textContent = '認證功能已在前端停用。';
+    }
+}
+updateAuthStatus();
 
 /**
  * 測試 GET /api/echomsg API
@@ -25,6 +38,8 @@ window.testEchoMessage = async () => {
     } catch (error) {
         // 錯誤處理邏輯已經在 apiProxy.js 中處理，這裡只需顯示錯誤訊息
         echoResponseDiv.textContent = `錯誤: ${error.message}\n${JSON.stringify(error.response, null, 2)}`;
+    } finally {
+        updateAuthStatus();
     }
 };
 
@@ -41,33 +56,34 @@ window.testReverseMessage = async () => {
     } catch (error) {
         // 錯誤處理邏輯已經在 apiProxy.js 中處理，這裡只需顯示錯誤訊息
         reverseResponseDiv.textContent = `錯誤: ${error.message}\n${JSON.stringify(error.response, null, 2)}`;
+    } finally {
+        updateAuthStatus();
     }
 };
 
-// 由於您的 Express 後端沒有登入 API，這裡的登入/登出功能會失敗。
-// 如果未來您添加了登入 API，可以取消註解以下代碼進行測試。
-/*
-// 假設有一個假的登入按鈕
-window.testLogin = async () => {
-    try {
-        console.log('嘗試登入...');
-        // 這裡的憑證需要與您後端的登入 API 期望的格式相符
-        const loginPayload = { username: 'testuser', password: 'password123' };
-        // 這裡可以考慮讓 authService.js 內部直接使用 apiProxy.login 而不是 api.post
-        const response = await login(loginPayload, '額外客戶端資訊');
-        console.log('登入成功:', response);
-        alert('登入成功！');
-        console.log('是否已登入:', isAuthenticated());
-    } catch (error) {
-        console.error('登入失敗:', error);
-        alert('登入失敗: ' + (error.response?.data?.message || error.message));
-    }
-};
+// 新增：登入/登出功能
+if (ENABLE_LOGIN) {
+    window.testLogin = async () => {
+        try {
+            console.log('嘗試登入...');
+            // 這裡的憑證需要與您後端的登入 API 期望的格式相符
+            const loginPayload = { username: 'testuser', password: 'password123' };
+            // 使用 authService.js 中的 login 函式
+            const response = await login(loginPayload, '額外客戶端資訊'); //
+            console.log('登入成功:', response); //
+            alert('登入成功！');
+        } catch (error) {
+            console.error('登入失敗:', error);
+            alert('登入失敗: ' + (error.response?.data?.message || error.message));
+        } finally {
+            updateAuthStatus();
+        }
+    };
 
-window.testLogout = () => {
-    logout();
-    console.log('已登出。');
-    alert('已登出！');
-    console.log('是否已登入:', isAuthenticated());
-};
-*/
+    window.testLogout = () => {
+        logout(); //
+        console.log('已登出。'); //
+        alert('已登出！');
+        updateAuthStatus();
+    };
+}

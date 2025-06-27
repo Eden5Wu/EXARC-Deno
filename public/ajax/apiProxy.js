@@ -20,6 +20,15 @@ async function handleApiCall(apiCallFn, endpoint, dataOrParams) {
 }
 export const apiProxy = {
     /**
+     * 呼叫 POST /api/login API。
+     * @param {Object} credentials - 要傳遞的請求主體數據 (JSON 物件)。
+     * @returns {Promise<Object|string>} 回應數據。
+     */
+    login: async (credentials) => {
+        return handleApiCall(api.post, 'login', { credentials: credentials });
+    },
+
+    /**
      * 呼叫 GET /api/echomsg API。
      * @param {string} msg - 要傳遞的查詢訊息。
      * @returns {Promise<Object|string>} 回應數據。
