@@ -58,20 +58,6 @@ export function logout() {
 }
 
 /**
- * **新增功能**：清除本地儲存中的認證相關數據。
- * 這對於某些調試或強制用戶登出並清除所有本地狀態的場景很有用。
- */
-export function clearLocalStorageAuth() {
-    api.setAuth(null); // 確保 apiExecutor 中的 Token 也被清除
-    // 直接清除整個 localStorage 或只清除 AUTH_TOKEN_STORAGE_KEY，取決於您的需求
-    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-    // 如果您想清除所有 localStorage 數據，可以使用：
-    // localStorage.clear();
-    console.log('本地儲存中的認證 Token 已清除。');
-}
-
-
-/**
  * 檢查用戶是否已登入（基於 localStorage 中是否有認證 Token）。
  * 這只是一個快速的客戶端檢查，實際的認證狀態仍需透過發送受保護的 API 請求來確認。
  * @returns {boolean} 如果 localStorage 中有認證 Token 則返回 true，否則返回 false。
