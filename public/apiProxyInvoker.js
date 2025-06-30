@@ -3,11 +3,11 @@
 // 注意：我們不再直接從這裡 import apiProxy，因為我們需要它的原始碼。
 // 我們仍然需要 apiExecutor 和 authService 來實際執行 API 請求。
 import { api } from './ajax/apiExecutor.js'; // 導入底層執行器
-import { isAuthenticated, initializeAuth } from './ajax/authService.js';
+import { isAuthenticated, initializeAuth } from './ajax/authService.js'; // 導入認證相關函式
 
 // DOM 元素
-const apiContainer = document.getElementById('api-container');
-const authStatusDiv = document.getElementById('authStatus');
+const apiContainer = document.getElementById('api-container'); // 取得 API 容器元素
+const authStatusDiv = document.getElementById('authStatus'); // 取得認證狀態元素
 
 // 讓 apiProxy 物件可以被全域存取
 let apiProxy = {}; 
@@ -173,43 +173,43 @@ function createApiSection(apiName, metadata) {
  * 更新認證狀態的 UI 顯示。
  */
 function updateAuthStatusUI() {
-    authStatusDiv.textContent = `認證狀態: ${isAuthenticated() ? '已登入' : '未登入'}`;
+    authStatusDiv.textContent = `認證狀態: ${isAuthenticated() ? '已登入' : '未登入'}`; // 使用 isAuthenticated() 函式檢查狀態
 }
 
 // 頁面載入時的主要初始化邏輯
 document.addEventListener('DOMContentLoaded', async () => {
-    apiContainer.innerHTML = '載入 API 資訊中...';
+    apiContainer.innerHTML = '載入 API 資訊中...'; // 初始顯示載入訊息
 
     // 步驟 1: 載入 apiProxy.js 的原始碼
     try {
-        const proxySourceResponse = await fetch('./ajax/apiProxy.js');
+        const proxySourceResponse = await fetch('./ajax/apiProxy.js'); // 載入 apiProxy.js 檔案
         if (!proxySourceResponse.ok) {
-            throw new Error(`無法載入 apiProxy.js: ${proxySourceResponse.status}`);
+            throw new Error(`無法載入 apiProxy.js: ${proxySourceResponse.status}`); // 檢查 HTTP 回應是否成功
         }
-        const proxySourceCode = await proxySourceResponse.text();
+        const proxySourceCode = await proxySourceResponse.text(); // 取得檔案內容
         
         // 步驟 2: 解析原始碼以獲取元數據
-        const apiMetadata = parseApiProxySource(proxySourceCode);
-        console.log('解析出的 API 元數據:', apiMetadata);
+        const apiMetadata = parseApiProxySource(proxySourceCode); // 解析原始碼以獲取元數據
+        console.log('解析出的 API 元數據:', apiMetadata); // 在控制台印出元數據
         
         // 步驟 3: 動態載入 apiProxy.js 模組本身（用於實際呼叫）
         // 因為 import 動態載入的是執行後的模組，註解會被移除，所以我們需要分兩步
-        const { apiProxy: loadedApiProxy } = await import('./ajax/apiProxy.js');
+        const { apiProxy: loadedApiProxy } = await import('./ajax/apiProxy.js'); // 動態導入 apiProxy.js
         apiProxy = loadedApiProxy; // 將載入的物件賦值給全域變數
         
         // 步驟 4: 根據解析出的元數據生成 UI
         apiContainer.innerHTML = ''; // 清空載入中訊息
         for (const apiName in apiMetadata) {
             if (Object.prototype.hasOwnProperty.call(apiMetadata, apiName)) {
-                createApiSection(apiName, apiMetadata[apiName]);
+                createApiSection(apiName, apiMetadata[apiName]); // 為每個 API 方法創建測試區塊
             }
         }
     } catch (error) {
-        console.error('初始化失敗:', error);
-        apiContainer.innerHTML = `<p style="color:red;">載入或解析 API 代理檔案失敗: ${error.message}</p>`;
+        console.error('初始化失敗:', error); // 捕捉並印出錯誤
+        apiContainer.innerHTML = `<p style="color:red;">載入或解析 API 代理檔案失敗: ${error.message}</p>`; // 在頁面上顯示錯誤訊息
     }
     
     // 步驟 5: 初始化認證狀態並更新 UI
-    initializeAuth();
-    updateAuthStatusUI();
+    initializeAuth(); // 從 localStorage 恢復認證 Token
+    updateAuthStatusUI(); // 更新 UI 顯示
 });
