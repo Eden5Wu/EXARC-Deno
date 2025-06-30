@@ -76,7 +76,7 @@ app.post('/api/login', async (req, res) => {
 
 // API 路由
 app.get('/api/echomsg/:msg', (req, res) => {
-    const msg = req.query.msg || 'No message provided';
+    const msg = req.params.msg || 'No message provided';
     let response = { received: msg, echoed: msg };
 
     // 由於認證中介軟體的設計，如果請求能到達這裡，
