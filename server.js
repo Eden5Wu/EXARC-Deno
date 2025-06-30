@@ -33,19 +33,6 @@ app.use(express.static(pathJoin(__dirname, 'public')));
 // 新增：從環境變數讀取是否啟用認證功能
 const useAuth = Deno.env.get('USE_AUTH') === 'true';
 
-// ==== API 元數據定義 (已更新) ====
-// 在這裡集中定義您的 API 端點、方法和參數類型
-// 這些資訊會傳遞給 generateApiProxy.js 用於生成前端代理
-const apiMetadata = {
-    // echomsg 是 GET 請求，參數 'msg' 來自 query
-    'echomsg': { method: 'GET', paramName: 'msg', paramType: 'query' },
-    // reversemmsg 是 POST 請求，參數 'message' 是 JSON body
-    'reversemmsg': { method: 'POST', paramName: 'message', paramType: 'body' },
-    // 新增：login 是 POST 請求，參數 'credentials' 是 JSON body
-    'login': { method: 'POST', paramName: 'credentials', paramType: 'body' }
-};
-// =============================
-
 // 新增：根據環境變數決定是否應用認證中介軟體
 if (useAuth) {
     // 將彈性認證中介軟體應用於所有 /api 路由
@@ -88,7 +75,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // API 路由
-app.get('/api/echomsg', (req, res) => {
+app.get('/api/echomsg/:msg', (req, res) => {
     const msg = req.query.msg || 'No message provided';
     let response = { received: msg, echoed: msg };
 
@@ -126,7 +113,7 @@ app.post('/api/reversemmsg', (req, res) => {
 if (Deno.env.get('NODE_ENV') !== 'production') {
     const { generateApiProxyFile } = await import('./generateApiProxy.js');
     // 將 app 實例和 apiMetadata 物件傳遞給生成函數
-    generateApiProxyFile(app, apiMetadata);
+    generateApiProxyFile(app);
 }
 // --- 結束新增 ---
 
