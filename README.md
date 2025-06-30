@@ -22,6 +22,7 @@
 +package.json       // 專案依賴與配置
 +server.js          // Express.js 後端伺服器主入口
 ```
+
 ---
 
 ## 核心功能與檔案說明
@@ -58,24 +59,14 @@
 
 * **`generateApiProxy.js`**
     * 這是一個**後端 Deno 腳本**，在 `server.js` 啟動時被調用（僅限開發模式）。
-    * 它的職責是讀取 Express 應用程式 (`server.js`) 中定義的所有 API 路由，並根據這些路由資訊以及 `apiMetadata` 的定義，自動生成 `public/ajax/apiProxy.js` 的內容。
+    * 它的職責是讀取 Express 應用程式 (`server.js`) 中定義的所有 API 路由，並根據這些路由資訊自動生成 `public/ajax/apiProxy.js` 的內容。
     * **如何使用：** 作為開發工具，您通常不需要直接調用或修改它，它會在 `deno task dev` 啟動時自動執行.
 
 * **`server.js`**
     * Express.js 後端應用程式的主入口點。
-    * 它配置了 Express 伺服器、中介層、定義了所有的後端 API 路由。
-    * **API 元數據定義 (`apiMetadata`)**：此檔案中包含了 `apiMetadata` 物件的定義。這個物件是**手動維護**的，用於明確聲明每個 API 端點的預期 HTTP 方法、參數名稱及參數類型（例如：`query` 參數、`JSON` 物件主體 [`body`]）。`generateApiProxy.js` 腳本會依據此 `apiMetadata` 來生成精確的前端 API 代理函數，確保前後端資料契約的一致性。
+    * 它配置了 Express 伺服器、中介層，並定義了所有的後端 API 路由。
     * 在開發模式下，它會引用並執行 `generateApiProxy.js` 腳本來自動更新前端的 `apiProxy.js`。
-    * **如何使用：** 定義您的後端 API 端點，維護 `apiMetadata` 以描述其介面，並啟動 Express 伺服器。
-
-    **`apiMetadata` 範例:**
-    ```javascript
-    const apiMetadata = {
-        'echomsg': { method: 'GET', paramName: 'msg', paramType: 'query' },
-        'reversemmsg': { method: 'POST', paramName: 'message', paramType: 'body' },
-        'login': { method: 'POST', paramName: 'credentials', paramType: 'body' }
-    };
-    ```
+    * **如何使用：** 定義您的後端 API 端點，並啟動 Express 伺服器。
 
 * **`deno.json`**
     * 定義 Deno 專案的配置，包含 `tasks`（任務）和 `imports`（導入映射）。
