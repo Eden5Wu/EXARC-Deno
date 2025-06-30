@@ -1,4 +1,4 @@
-# EXARC (Express ARC JS Framework)
+# EXARC (Express ARC JS Starter Kit)
 
 這個專案是一個基於 Express.js 的輕量級後端模板，旨在提供一個高效且易於維護的前後端 API 互動架構。它特別強調在開發模式下自動同步前端 API 代理模組，確保前後端介面的一致性，大幅提升開發效率。此為 **Deno 運行環境版本**.
 
