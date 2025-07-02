@@ -44,7 +44,8 @@ function buildUrl(endpoint, queryParams = {}) {
     // 結合基礎路徑與端點。API_BASE_URL 應已包含 `/api` 部分。
     let url = `${API_BASE_URL}/${endpoint}`;
 
-    const params = new URLSearchParams(queryParams);
+    const finalQueryParams = (queryParams === null || queryParams === undefined) ? {} : queryParams;
+    const params = new URLSearchParams(finalQueryParams);
     const queryString = params.toString();
 
     if (queryString) {
