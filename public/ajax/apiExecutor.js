@@ -60,16 +60,16 @@ function buildUrl(endpoint, queryParams = {}) {
  * @param {string} method - HTTP 方法 ('GET', 'POST', 'PUT', 'DELETE')。
  * @param {string} endpoint - API 端點路徑，不包含基礎路徑和 `/api/`。
  * @param {Object|Array} [data=null] - 請求體數據，用於 'POST' 或 'PUT' 請求。將被轉換為 JSON 字串。
+ * 如果為 FormData 類型，將直接作為 body 發送；否則將被轉換為 JSON 字串。
  * @param {Object} [queryParams={}] - 查詢參數物件，用於 'GET' 或 'DELETE' 請求。
  * @returns {Promise<Object|string>} 成功時解析為伺服器回應的 JSON 物件或文本；失敗時拋出包含錯誤信息的 Error 物件。
  * @throws {Error} 如果請求失敗或伺服器返回非 2xx 狀態碼。
  * 錯誤物件會包含 `response` 屬性，其中包含 `status`, `statusText`, 和 `data`。
  */
-async function executeApi(method, endpoint, data = null, queryParams = {}) {
+async function executeApi(method, endpoint, data = null, queryParams = {}, accept=null) {
     const url = buildUrl(endpoint, queryParams);
     const headers = {
-        'Content-Type': 'application/json', // 預設請求體為 JSON 格式
-        'Accept': 'application/json',       // 期望接收 JSON 格式的回應
+        'Accept': (accept == null ? "application/json" : accept),       // 期望接收 JSON 格式的回應
     };
 
     // 如果 _authenticationToken 已設定，則添加到 Authorization 頭
@@ -77,15 +77,26 @@ async function executeApi(method, endpoint, data = null, queryParams = {}) {
         headers['Authorization'] = _authenticationToken;
     }
 
+    // About credentials:
+    // If your backend API relies on cookies to maintain user session state (e.g., traditional session-based authentication), please uncomment this line
+    // 後端 API 依賴於 Cookie 來維護使用者會話狀態 (例如傳統的 Session-based 認證)，請取消註解此行
     const config = {
         method: method,
         headers: headers,
-        // credentials: 'include' // 如果您的 API 需要發送瀏覽器管理的 Cookie，請取消註解此行
+        // credentials: 'include' 
     };
 
     // 對於 POST 或 PUT 請求，將數據添加到請求體中
     if (data !== null && (method === 'POST' || method === 'PUT')) {
-        config.body = JSON.stringify(data); // 始終將數據 JSON.stringify
+        if (data instanceof FormData) {
+            // 如果是 FormData，不要手動設定 Content-Type，瀏覽器會自動設定 multipart/form-data 和邊界
+            config.body = data;
+            delete headers['Content-Type']; // 確保不發送 'Content-Type: application/json'
+        } else {
+            // 否則，假定為 JSON 數據
+            headers['Content-Type'] = 'application/json';
+            config.body = JSON.stringify(data);
+        }
     }
 
     try {
@@ -129,11 +140,10 @@ async function executeApi(method, endpoint, data = null, queryParams = {}) {
  * `api.post('login', { username, password })`
  */
 export const api = {
-    get: (endpoint, queryParams) => executeApi('GET', endpoint, null, queryParams),
-    // 修正：POST 請求不再有 postText 變體，一律使用 executeApi 預設的 JSON 處理
-    post: (endpoint, data) => executeApi('POST', endpoint, data),
-    put: (endpoint, data) => executeApi('PUT', endpoint, data),
-    delete: (endpoint, queryParams) => executeApi('DELETE', endpoint, null, queryParams),
+    get: (endpoint, queryParams, accept = null) => executeApi('GET', endpoint, null, queryParams, accept),
+    post: (endpoint, data, accept = null) => executeApi('POST', endpoint, data, null, accept), // 注意這裡，如果需要查詢參數，還需要額外處理
+    put: (endpoint, data, accept = null) => executeApi('PUT', endpoint, data, null, accept),
+    delete: (endpoint, queryParams, accept = null) => executeApi('DELETE', endpoint, null, queryParams, accept),
     setAuth: setAuthenticationToken,
     getAuth: getAuthenticationToken,
 };
