@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EXARC TODO CRUD Demo (POST Only)</title>
+  <!-- 引入 Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: "Inter", sans-serif; background-color: #f3f4f6; }
+    .container { max-width: 800px; margin: 40px auto; padding: 30px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .todo-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+    .todo-item:last-child { border-bottom: none; }
+    .todo-text { flex-grow: 1; margin-left: 10px; font-size: 1.125rem; }
+    .completed { text-decoration: line-through; color: #6b7280; }
+    .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+    .input-group input { flex-grow: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; }
+    .input-group button { padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; }
+    .add-btn { background-color: #2563eb; color: white; }
+    .add-btn:hover { background-color: #1d4ed8; }
+    .edit-btn { background-color: #f59e0b; color: white; margin-left: 8px; }
+    .edit-btn:hover { background-color: #d97706; }
+    .save-btn { background-color: #10b981; color: white; margin-left: 8px; }
+    .save-btn:hover { background-color: #059669; }
+    .delete-btn { background-color: #ef4444; color: white; margin-left: 8px; }
+    .delete-btn:hover { background-color: #dc2626; }
+    .loading-text { color: #6b7280; font-style: italic; text-align: center; margin-top: 20px; }
+    .error-text { color: #ef4444; font-weight: bold; text-align: center; margin-top: 20px; }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.1.0",
+        "react-dom/client": "https://esm.sh/react-dom@19.1.0/client",
+        "apiProxy": "./ajax/apiProxy.js"
+      }
+    }
+  </script>
+  <script type="module" src="https://esm.sh/tsx"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // 從 importmap 定義的路徑導入 React 鉤子和 ReactDOM
+    import { createRoot } from "react-dom/client";
+    import { useState, useEffect } from "react";
+    // 從 importmap 定義的路徑導入 apiProxy
+    import { apiProxy } from "apiProxy";
+
+    // React 主元件
+    function App() {
+      // 狀態：管理待辦事項列表
+      const [todos, setTodos] = useState([]);
+      // 狀態：管理新增待辦事項的輸入框內容
+      const [newTask, setNewTask] = useState('');
+      // 狀態：管理正在編輯的待辦事項 ID
+      const [editingTodoId, setEditingTodoId] = useState(null);
+      // 狀態：管理正在編輯的待辦事項的文字內容
+      const [editingText, setEditingText] = useState('');
+      // 狀態：管理載入狀態
+      const [loading, setLoading] = useState(true);
+      // 狀態：管理錯誤訊息
+      const [error, setError] = useState(null);
+
+      // 載入待辦事項列表
+      const fetchTodos = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          // 呼叫 apiProxy.todosFetch() 取得所有待辦事項
+          const response = await apiProxy.todosFetch();
+          setTodos(response);
+        } catch (err) {
+          console.error('載入待辦事項失敗:', err);
+          setError('無法載入待辦事項。請檢查後端伺服器。');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // 元件掛載時載入待辦事項
+      useEffect(() => {
+        fetchTodos();
+      }, []);
+
+      // 處理新增待辦事項
+      const handleAddTodo = async () => {
+        if (newTask.trim() === '') {
+          alert('待辦事項內容不能為空！');
+          return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+          // 呼叫 apiProxy.todosCreate() 新增待辦事項
+          await apiProxy.todosCreate({ text: newTask });
+          setNewTask(''); // 清空輸入框
+          await fetchTodos(); // 重新載入列表
+        } catch (err) {
+          console.error('新增待辦事項失敗:', err);
+          setError('無法新增待辦事項。');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // 處理切換待辦事項完成狀態
+      const handleToggleComplete = async (todo) => {
+        setLoading(true);
+        setError(null);
+        try {
+          // 呼叫 apiProxy.todosUpdate() 更新完成狀態
+          await apiProxy.todosUpdate({ id: todo.id, completed: !todo.completed });
+          await fetchTodos(); // 重新載入列表
+        } catch (err) {
+          console.error('更新待辦事項狀態失敗:', err);
+          setError('無法更新待辦事項狀態。');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // 開始編輯待辦事項
+      const handleStartEditing = (todo) => {
+        setEditingTodoId(todo.id);
+        setEditingText(todo.text);
+      };
+
+      // 儲存編輯後的待辦事項
+      const handleSaveEdit = async (todoId) => {
+        if (editingText.trim() === '') {
+          alert('待辦事項內容不能為空！');
+          return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+          // 呼叫 apiProxy.todosUpdate() 更新文字內容
+          await apiProxy.todosUpdate({ id: todoId, text: editingText });
+          setEditingTodoId(null); // 退出編輯模式
+          setEditingText('');
+          await fetchTodos(); // 重新載入列表
+        } catch (err) {
+          console.error('儲存編輯失敗:', err);
+          setError('無法儲存編輯。');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // 處理刪除待辦事項
+      const handleDeleteTodo = async (todoId) => {
+        if (!confirm('確定要刪除這個待辦事項嗎？')) {
+          return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+          // 呼叫 apiProxy.todosDelete() 刪除待辦事項
+          await apiProxy.todosDelete({ id: todoId });
+          await fetchTodos(); // 重新載入列表
+        } catch (err) {
+          console.error('刪除待辦事項失敗:', err);
+          setError('無法刪除待辦事項。');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // UI 渲染
+      return (
+        <div className="container rounded-xl">
+          <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">我的待辦事項</h1>
+
+          {/* 新增待辦事項區塊 */}
+          <div className="input-group">
+            <input
+              type="text"
+              placeholder="新增一個待辦事項..."
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              onKeyPress={(e) => { if (e.key === 'Enter') handleAddTodo(); }}
+              className="focus:ring-blue-500 focus:border-blue-500"
+              disabled={loading}
+            />
+            <button
+              onClick={handleAddTodo}
+              className="add-btn rounded-lg shadow-md hover:shadow-lg"
+              disabled={loading}
+            >
+              新增
+            </button>
+          </div>
+
+          {/* 載入和錯誤訊息 */}
+          {loading && <p className="loading-text">載入中...</p>}
+          {error && <p className="error-text">{error}</p>}
+
+          {/* 待辦事項列表 */}
+          {!loading && todos.length === 0 && !error && (
+            <p className="text-center text-gray-500 mt-4">目前沒有待辦事項。</p>
+          )}
+
+          <ul className="list-none p-0">
+            {todos.map((todo) => (
+              <li key={todo.id} className="todo-item">
+                <input
+                  type="checkbox"
+                  checked={todo.completed}
+                  onChange={() => handleToggleComplete(todo)}
+                  className="form-checkbox h-5 w-5 text-blue-600 rounded"
+                  disabled={loading}
+                />
+                {editingTodoId === todo.id ? (
+                  <input
+                    type="text"
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    onKeyPress={(e) => { if (e.key === 'Enter') handleSaveEdit(todo.id); }}
+                    className="flex-grow ml-2 p-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                    disabled={loading}
+                  />
+                ) : (
+                  <span className={`todo-text ${todo.completed ? 'completed' : ''}`}>
+                    {todo.text}
+                  </span>
+                )}
+                <div className="flex-shrink-0">
+                  {editingTodoId === todo.id ? (
+                    <button
+                      onClick={() => handleSaveEdit(todo.id)}
+                      className="save-btn rounded-lg shadow-md hover:shadow-lg"
+                      disabled={loading}
+                    >
+                      儲存
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleStartEditing(todo)}
+                      className="edit-btn rounded-lg shadow-md hover:shadow-lg"
+                      disabled={loading}
+                    >
+                      編輯
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteTodo(todo.id)}
+                    className="delete-btn rounded-lg shadow-md hover:shadow-lg"
+                    disabled={loading}
+                  >
+                    刪除
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    // 將 App 元件渲染到 DOM 中
+    createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
