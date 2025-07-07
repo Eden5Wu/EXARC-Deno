@@ -1,11 +1,11 @@
-# EXARC (Express ARC JS Starter Kit)
+# EXARC (Express ARC JS Starter Kit) - Deno 版本
 
 這個專案是一個基於 Express.js 的輕量級後端模板，旨在提供一個高效且易於維護的前後端 API 互動架構。它特別強調在開發模式下自動同步前端 API 代理模組，確保前後端介面的一致性，大幅提升開發效率。此為 **Deno 運行環境版本**.
 
 ---
 
 ## 專案結構
-```
+```yaml
 +public
   +ajax
     +apiExecutor.js   // 基礎 API 執行器
@@ -16,10 +16,11 @@
   +jquery-mobile-demo.html // jQuery Mobile 示範頁面
   +react-demo.html  // React 示範頁面
   +vue-demo.html    // Vue 示範頁面
+  +react-todo.html // React TODO List 完整範例
   +apiProxyInvoker.html // API 動態調用器 HTML 介面
   +apiProxyInvoker.js   // API 動態調用器 JavaScript 邏輯
 +generateApiProxy.js// 後端腳本：負責動態生成 apiProxy.js
-+package.json       // 專案依賴與配置
++deno.json          // Deno 專案任務與依賴配置
 +server.js          // Express.js 後端伺服器主入口
 ```
 
@@ -134,3 +135,118 @@
       * 顯示伺服器回應的區域。
 
     * 您可以直接在輸入框中填寫參數，點擊「發送請求」按鈕，並即時查看 API 的回傳結果。這對於 API 的快速驗證、調試和理解非常有幫助。
+
+---
+
+## 核心開發理念：後端驅動，前端自動化
+
+本模板的核心設計理念是**以後端為唯一的真實來源 (Backend as the Single Source of Truth)**。開發者只需專注於在後端 `server.js` 中定義 API 路由，前端所需的一切將會自動生成與同步，讓您體驗真正的「填空式」開發。
+
+* **API 代理自動生成**：當您在 `server.js` 新增或修改 API 路由後，`generateApiProxy.js` 腳本會自動掃描這些路由，並在前端生成對應的 `public/ajax/apiProxy.js` 檔案。您無需手動編寫任何 `fetch` 或 `axios` 請求。
+* **文件與測試同步**：更強大的是，`apiProxyInvoker.html` 會動態讀取 `apiProxy.js` 的原始碼與註解，為您即時生成一個互動式的 API 測試頁面。新增 API 的同時，也完成了測試工具的部署。
+
+---
+
+## 快速上手：新增 API 的標準流程
+
+跟隨以下簡單四步驟，體驗本模板的敏捷開發流程。以「新增一個獲取使用者列表的 API」為例：
+
+### 第一步：在後端 `server.js` 中定義新路由
+
+打開 `server.js` 檔案，在您喜歡的位置加入新的 Express 路由定義。這是您唯一需要編寫核心業務邏輯的地方。
+
+```javascript
+// server.js
+
+// ... 其他既有路由 ...
+
+// ========= 新增您的 API =========
+app.get('/api/users/list', (req, res) => {
+    // 您的業務邏輯，例如從資料庫查詢
+    const users = [
+        { id: 1, name: 'Alice' },
+        { id: 2, name: 'Bob' }
+    ];
+    // 直接回傳 JSON
+    res.json(users);
+});
+
+// ========= API 定義結束 =========
+
+// ... 伺服器啟動代碼 ...
+```
+
+---
+
+### 第二步：(自動) 生成前端 API 代理
+
+這是此模板的魔力所在。
+
+如果您是透過 `deno task dev` 指令來啟動專案，**您不需要手動做任何事**。開發伺服器會即時監控您的檔案變更。
+
+當您儲存 `server.js` 後，伺服器會自動重啟。在重啟的過程中，`generateApiProxy.js` 腳本將被再次執行，它會掃描您剛剛加入的 `/api/users/list` 路由，並自動將其轉換為可供前端呼叫的函式，然後更新到 `public/ajax/apiProxy.js` 檔案中。這個過程完全無感且自動化，確保了前後端介面的即時同步。
+
+---
+
+### 第三步：在前端直覺地呼叫新 API
+
+得益於自動生成的 `apiProxy.js` 檔案，您現在可以立即在任何前端 JavaScript 檔案中（例如 `public/main.js`、React 或 Vue 元件），像呼叫一個本地的非同步函式一樣來使用這個新 API。
+
+這個腳本會智慧地將後端路由路徑 `/api/users/list` 轉換為前端的駝峰式 (camelCase) 函式名稱 `usersList`，讓您的程式碼更加語意化且易於閱讀。
+
+**您只需要：**
+1.  導入 `apiProxy` 物件。
+2.  直接呼叫對應的函式即可。
+
+```javascript
+// 在您的任何前端 JS 檔案中 (e.g., public/main.js)
+import { apiProxy } from './ajax/apiProxy.js';
+
+async function displayUsers() {
+    try {
+        // 直接呼叫，完全無需關心 URL、Header 或 HTTP 方法的細節
+        const userList = await apiProxy.usersList();
+        
+        console.log('成功取得使用者列表:', userList);
+        // 在此處將 userList 渲染到您的頁面上
+        
+    } catch (error) {
+        // 統一的錯誤處理機制
+        console.error('取得使用者列表失敗:', error);
+    }
+}
+
+// 執行它！
+displayUsers();
+```
+
+正如您所見，前端開發者完全從繁瑣的 API 請求配置中解放出來，可以更專注於 UI 與業務邏輯的實現。
+
+---
+
+### 第四步：使用動態調用器，即時測試與探索
+
+這一步是體驗本模板強大之處的關鍵。您無需依賴 Postman 或其他外部工具，即可對剛剛建立的 API 進行完整的測試。
+
+1.  **確保後端伺服器仍在運行。**
+2.  在您的瀏覽器中，打開 `http://localhost:8893/apiProxyInvoker.html`。
+
+頁面載入後，`apiProxyInvoker.js` 會自動讀取 `apiProxy.js` 的內容，並動態生成所有 API 方法的測試介面。您會立刻看到一個為 `usersList` 新建立的區塊，其中包含了：
+
+* **API 名稱與說明**：從 JSDoc 註解中解析出的詳細說明。
+* **參數輸入欄位**：根據 API 參數自動生成的輸入框。
+* **發送按鈕**：點擊即可立即發送請求。
+* **回應區域**：即時顯示後端回傳的結果。
+
+這個動態調用器讓 API 的驗證、除錯和探索變得無比直觀與高效，是您開發過程中的得力助手。
+
+---
+
+## 總結：為何選擇 EXARC 模板？
+
+遵循以上流程，您就可以不斷地在 `server.js` 中「填空」，快速擴充您的應用程式功能。選擇 EXARC，意味著選擇一個更現代、更高效的開發模式：
+
+* **專注核心邏輯**：將時間花在刀口上，只需專注於後端的業務邏輯實現。
+* **告別樣板程式碼**：徹底告別手動編寫和維護前端 `fetch` 或 `axios` 請求的繁瑣工作。
+* **杜絕前後端不同步**：透過後端路由自動生成前端代理，從根本上消除了前後端 API 介面不一致的常見錯誤。
+* **極致開發效率**：從定義路由到完成測試，整個流程無縫銜接，大幅縮短開發週期，讓您能更快地交付價值。
