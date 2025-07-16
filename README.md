@@ -1,6 +1,6 @@
 # EXARC (Deno/Oak ARC JS Starter Kit)
 
-這個專案是原 `EXARC (Express ARC JS Starter Kit)` 的 Deno 和 Oak 框架重構版本。它不僅保留了原始專案的核心理念——提供一個高效且易於維護的前後端 API 互動架構，更利用 Deno 的現代特性（如原生 TypeScript 支援、去中心化的依賴管理和更安全的執行環境）將其昇華。
+這個專案是原 [EXARC (Express ARC JS Starter Kit)](https://github.com/Eden5Wu/EXARC) 的 Deno 和 Oak 框架重構版本。它不僅保留了原始專案的核心理念——提供一個高效且易於維護的前後端 API 互動架構，更利用 Deno 的現代特性（如原生 TypeScript 支援、去中心化的依賴管理和更安全的執行環境）將其昇華。
 
 我們的目標是打造一個**極致簡潔、高度自動化**的後端開發體驗。
 
